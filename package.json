@@ -1,0 +1,14 @@
+{
+  "name": "chatgpt-rtl-firefox",
+  "version": "0.1.0",
+  "private": true,
+  "description": "A Firefox extension that adds automatic RTL support to ChatGPT.",
+  "scripts": {
+    "test": "node --test",
+    "check": "node --check src/direction.js && node --check src/content.js && node --check options/options.js",
+    "lint:addon": "npx web-ext lint",
+    "start": "npx web-ext run",
+    "build": "npx web-ext build --overwrite-dest"
+  },
+  "license": "MIT"
+}

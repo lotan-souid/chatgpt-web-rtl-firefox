@@ -1,0 +1,73 @@
+:is(
+  [data-message-author-role],
+  article[data-testid^="conversation-turn-"]
+)[data-chatgpt-rtl="true"],
+:is(
+  [data-message-author-role],
+  article[data-testid^="conversation-turn-"]
+) :is(
+  p,
+  li,
+  blockquote,
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6,
+  .whitespace-pre-wrap
+)[data-chatgpt-rtl="true"],
+:is(
+  #prompt-textarea,
+  textarea[data-id="root"],
+  form [contenteditable="true"]
+)[data-chatgpt-rtl="true"] {
+  text-align: start;
+  unicode-bidi: plaintext;
+}
+
+/* Technical content should remain predictable and copyable. */
+:is(
+  [data-message-author-role],
+  article[data-testid^="conversation-turn-"]
+) :is(
+  pre,
+  code,
+  kbd,
+  samp,
+  table,
+  math,
+  svg,
+  [class*="katex"],
+  [class*="math"]
+),
+:is(
+  [data-message-author-role],
+  article[data-testid^="conversation-turn-"]
+) :is(
+  pre,
+  code,
+  kbd,
+  samp,
+  table,
+  math,
+  svg,
+  [class*="katex"],
+  [class*="math"]
+) * {
+  direction: ltr !important;
+  text-align: left !important;
+  unicode-bidi: isolate !important;
+}
+
+[dir="rtl"] :is(ul, ol) {
+  padding-inline-start: 1.5rem;
+  padding-inline-end: 0;
+}
+
+[dir="rtl"] blockquote {
+  border-inline-start: 0;
+  border-inline-end: 0.25rem solid currentColor;
+  padding-inline-start: 0;
+  padding-inline-end: 1rem;
+}
