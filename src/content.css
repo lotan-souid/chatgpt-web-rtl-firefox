@@ -22,8 +22,22 @@
   textarea[data-id="root"],
   form [contenteditable="true"]
 )[data-chatgpt-rtl="true"] {
-  text-align: start;
+  text-align: start !important;
   unicode-bidi: plaintext;
+}
+
+[data-chatgpt-rtl="true"][dir="rtl"] {
+  direction: rtl !important;
+  text-align: right !important;
+}
+
+[data-chatgpt-rtl="true"][dir="ltr"] {
+  direction: ltr !important;
+  text-align: left !important;
+}
+
+[data-chatgpt-rtl="true"][dir="auto"] {
+  text-align: start !important;
 }
 
 /* Technical content should remain predictable and copyable. */

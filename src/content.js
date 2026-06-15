@@ -4,15 +4,19 @@
   const extensionApi = globalThis.browser ?? globalThis.chrome;
   const directionApi = globalThis.ChatGptRtlDirection;
 
-  const MESSAGE_ROOT_SELECTOR = [
+  const MESSAGE_ROOT_SELECTORS = [
     "[data-message-author-role]",
     "article[data-testid^=\"conversation-turn-\"]"
-  ].join(", ");
+  ];
+
+  const NATURAL_BLOCK_SELECTOR =
+    ":is(p, li, blockquote, h1, h2, h3, h4, h5, h6, .whitespace-pre-wrap)";
 
   const NATURAL_TEXT_SELECTOR = [
-    MESSAGE_ROOT_SELECTOR,
-    `${MESSAGE_ROOT_SELECTOR} :is(p, li, blockquote, h1, h2, h3, h4, h5, h6)`,
-    `${MESSAGE_ROOT_SELECTOR} .whitespace-pre-wrap`
+    ...MESSAGE_ROOT_SELECTORS,
+    ...MESSAGE_ROOT_SELECTORS.map(
+      (rootSelector) => `${rootSelector} ${NATURAL_BLOCK_SELECTOR}`
+    )
   ].join(", ");
 
   const COMPOSER_SELECTOR = [
