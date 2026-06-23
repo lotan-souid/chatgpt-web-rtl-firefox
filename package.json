@@ -1,5 +1,5 @@
 {
-  "name": "chatgpt-rtl-firefox",
+  "name": "chatgpt-web-rtl-firefox",
   "version": "0.1.1",
   "private": true,
   "description": "A Firefox extension that adds automatic RTL support to ChatGPT.",

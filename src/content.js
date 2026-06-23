@@ -115,7 +115,7 @@
 
   loadSettings()
     .catch((error) => {
-      console.warn("ChatGPT RTL could not load its settings.", error);
+      console.warn("ChatGPT Web RTL could not load its settings.", error);
     })
     .finally(startObserver);
 })();

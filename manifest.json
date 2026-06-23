@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "ChatGPT RTL",
+  "name": "ChatGPT Web RTL",
   "version": "0.1.1",
   "description": "Adds automatic right-to-left support for Hebrew conversations in ChatGPT.",
   "permissions": [
@@ -8,7 +8,7 @@
   ],
   "browser_specific_settings": {
     "gecko": {
-      "id": "chatgpt-rtl@local",
+      "id": "chatgpt-web-rtl-firefox@local",
       "strict_min_version": "109.0"
     }
   },

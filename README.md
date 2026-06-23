@@ -1,4 +1,4 @@
-# ChatGPT RTL for Firefox
+# ChatGPT Web RTL for Firefox
 
 A Firefox extension that adds automatic right-to-left support to Hebrew
 messages and the prompt composer on ChatGPT.
