@@ -12,6 +12,13 @@ test("detects English as LTR", () => {
   assert.equal(detectDirection("Hello עולם"), "ltr");
 });
 
+test("detects mostly Hebrew text as RTL when it starts with an English term", () => {
+  assert.equal(
+    detectDirection("Keycloak הוא שרת קוד פתוח לניהול זהויות והרשאות"),
+    "rtl"
+  );
+});
+
 test("ignores punctuation and numbers before the first strong character", () => {
   assert.equal(detectDirection("123... עברית"), "rtl");
   assert.equal(detectDirection("42 - English"), "ltr");

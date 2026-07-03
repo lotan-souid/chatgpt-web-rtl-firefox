@@ -5,7 +5,7 @@ messages and the prompt composer on ChatGPT.
 
 ## Current behavior
 
-- Detects text direction from the first strong character in each text block.
+- Detects text direction from the dominant strong text direction in each text block.
 - Explicitly aligns RTL blocks right and LTR blocks left.
 - Supports `chatgpt.com` and the legacy `chat.openai.com` domain.
 - Keeps code, tables, SVG, and mathematical content left-to-right.

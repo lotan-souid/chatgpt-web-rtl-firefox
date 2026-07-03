@@ -23,7 +23,7 @@
   form [contenteditable="true"]
 )[data-chatgpt-rtl="true"] {
   text-align: start !important;
-  unicode-bidi: plaintext;
+  unicode-bidi: isolate;
 }
 
 [data-chatgpt-rtl="true"][dir="rtl"] {
