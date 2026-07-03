@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "ChatGPT Web RTL",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Adds automatic right-to-left support for Hebrew conversations in ChatGPT.",
   "permissions": [
     "storage"
