@@ -40,6 +40,11 @@
   text-align: start !important;
 }
 
+[data-chatgpt-rtl-inline-ltr="true"] {
+  direction: ltr !important;
+  unicode-bidi: isolate !important;
+}
+
 /* Technical content should remain predictable and copyable. */
 :is(
   [data-message-author-role],

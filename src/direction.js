@@ -6,6 +6,32 @@
   const LTR_CHARACTER =
     /[A-Za-z\u00C0-\u02AF\u0370-\u058F\u1E00-\u1EFF]/u;
 
+  const LTR_RUN = /[A-Za-z\u00C0-\u02AF\u0370-\u058F\u1E00-\u1EFF][A-Za-z0-9\u00C0-\u02AF\u0370-\u058F\u1E00-\u1EFF]*(?:[-+.#_\/:][A-Za-z0-9\u00C0-\u02AF\u0370-\u058F\u1E00-\u1EFF]+)*(?:\s+(?:[-\u2013\u2014]\s+)?[A-Za-z\u00C0-\u02AF\u0370-\u058F\u1E00-\u1EFF][A-Za-z0-9\u00C0-\u02AF\u0370-\u058F\u1E00-\u1EFF]*(?:[-+.#_\/:][A-Za-z0-9\u00C0-\u02AF\u0370-\u058F\u1E00-\u1EFF]+)*)*/gu;
+
+  function splitDirectionalRuns(value) {
+    const text = String(value ?? "");
+    const parts = [];
+    let offset = 0;
+
+    for (const match of text.matchAll(LTR_RUN)) {
+      if (match.index > offset) {
+        parts.push({
+          value: text.slice(offset, match.index),
+          direction: "auto"
+        });
+      }
+
+      parts.push({ value: match[0], direction: "ltr" });
+      offset = match.index + match[0].length;
+    }
+
+    if (offset < text.length) {
+      parts.push({ value: text.slice(offset), direction: "auto" });
+    }
+
+    return parts;
+  }
+
   function detectDirection(value) {
     let rtlRuns = 0;
     let ltrRuns = 0;
@@ -53,7 +79,7 @@
     return rtlRuns > ltrRuns ? "rtl" : "ltr";
   }
 
-  const api = { detectDirection };
+  const api = { detectDirection, splitDirectionalRuns };
   globalObject.ChatGptRtlDirection = api;
 
   if (typeof module !== "undefined" && module.exports) {

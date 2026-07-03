@@ -2,7 +2,7 @@
 
 const test = require("node:test");
 const assert = require("node:assert/strict");
-const { detectDirection } = require("../src/direction");
+const { detectDirection, splitDirectionalRuns } = require("../src/direction");
 
 test("detects Hebrew as RTL", () => {
   assert.equal(detectDirection("שלום world"), "rtl");
@@ -26,4 +26,23 @@ test("ignores punctuation and numbers before the first strong character", () => 
 
 test("returns auto when there is no strong character", () => {
   assert.equal(detectDirection("123 +-="), "auto");
+});
+
+test("splits multi-word English terms into isolated LTR runs", () => {
+  assert.deepEqual(
+    splitDirectionalRuns(
+      "Zoraxy הוא Reverse Proxy מודרני ל-Homelab ול-Self-Hosted כמו Nginx Proxy Manager"
+    ),
+    [
+      { value: "Zoraxy", direction: "ltr" },
+      { value: " הוא ", direction: "auto" },
+      { value: "Reverse Proxy", direction: "ltr" },
+      { value: " מודרני ל-", direction: "auto" },
+      { value: "Homelab", direction: "ltr" },
+      { value: " ול-", direction: "auto" },
+      { value: "Self-Hosted", direction: "ltr" },
+      { value: " כמו ", direction: "auto" },
+      { value: "Nginx Proxy Manager", direction: "ltr" }
+    ]
+  );
 });

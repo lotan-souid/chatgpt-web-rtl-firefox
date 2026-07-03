@@ -25,13 +25,94 @@
     "form [contenteditable=\"true\"]"
   ].join(", ");
 
+  const INLINE_LTR_SELECTOR = "[data-chatgpt-rtl-inline-ltr=\"true\"]";
+  const SKIP_INLINE_DIRECTION_SELECTOR = [
+    INLINE_LTR_SELECTOR,
+    "pre",
+    "code",
+    "kbd",
+    "samp",
+    "table",
+    "math",
+    "svg",
+    "[class*=\"katex\"]",
+    "[class*=\"math\"]"
+  ].join(", ");
+
   let patchComposer = true;
   let observer;
+
+  function unwrapInlineLtrRuns(element) {
+    element.querySelectorAll(INLINE_LTR_SELECTOR).forEach((wrapper) => {
+      wrapper.replaceWith(document.createTextNode(wrapper.textContent));
+    });
+    element.normalize();
+  }
+
+  function shouldSkipTextNode(textNode) {
+    const parent = textNode.parentElement;
+    return !parent || parent.closest(SKIP_INLINE_DIRECTION_SELECTOR);
+  }
+
+  function isolateInlineLtrRuns(element, direction) {
+    unwrapInlineLtrRuns(element);
+
+    if (direction !== "rtl") {
+      return;
+    }
+
+    const textNodes = [];
+    const walker = document.createTreeWalker(
+      element,
+      NodeFilter.SHOW_TEXT,
+      {
+        acceptNode(textNode) {
+          if (shouldSkipTextNode(textNode)) {
+            return NodeFilter.FILTER_REJECT;
+          }
+
+          return directionApi
+            .splitDirectionalRuns(textNode.nodeValue)
+            .some((part) => part.direction === "ltr")
+            ? NodeFilter.FILTER_ACCEPT
+            : NodeFilter.FILTER_REJECT;
+        }
+      }
+    );
+
+    while (walker.nextNode()) {
+      textNodes.push(walker.currentNode);
+    }
+
+    textNodes.forEach((textNode) => {
+      const fragment = document.createDocumentFragment();
+      const parts = directionApi.splitDirectionalRuns(textNode.nodeValue);
+
+      parts.forEach((part) => {
+        if (part.direction !== "ltr") {
+          fragment.append(document.createTextNode(part.value));
+          return;
+        }
+
+        const ltrRun = document.createElement("bdi");
+        ltrRun.dir = "ltr";
+        ltrRun.dataset.chatgptRtlInlineLtr = "true";
+        ltrRun.textContent = part.value;
+        fragment.append(ltrRun);
+      });
+
+      textNode.replaceWith(fragment);
+    });
+  }
 
   function applyDirection(element) {
     const direction = directionApi.detectDirection(element.textContent);
     element.setAttribute("dir", direction);
     element.dataset.chatgptRtl = "true";
+
+    if (!element.matches(COMPOSER_SELECTOR)) {
+      isolateInlineLtrRuns(element, direction);
+    }
   }
 
   function applyToRoot(root) {
