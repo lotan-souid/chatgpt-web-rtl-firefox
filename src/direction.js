@@ -5,6 +5,8 @@
     /[\u0590-\u08ff\uFB1D-\uFDFF\uFE70-\uFEFF]/u;
   const LTR_CHARACTER =
     /[A-Za-z\u00C0-\u02AF\u0370-\u058F\u1E00-\u1EFF]/u;
+  const TECH_TOKEN =
+    /^(?:AI|LLM|API|URL|URI|JSON|YAML|HTML|CSS|JS|TS|DOM|GitHub|OpenAI|ChatGPT|Claude|NPM|Node|React|Vue|Svelte|SQL|HTTP|HTTPS)$/u;
 
   const LTR_RUN = /[A-Za-z\u00C0-\u02AF\u0370-\u058F\u1E00-\u1EFF][A-Za-z0-9\u00C0-\u02AF\u0370-\u058F\u1E00-\u1EFF]*(?:[-+.#_\/:][A-Za-z0-9\u00C0-\u02AF\u0370-\u058F\u1E00-\u1EFF]+)*(?:\s+(?:[-\u2013\u2014]\s+)?[A-Za-z\u00C0-\u02AF\u0370-\u058F\u1E00-\u1EFF][A-Za-z0-9\u00C0-\u02AF\u0370-\u058F\u1E00-\u1EFF]*(?:[-+.#_\/:][A-Za-z0-9\u00C0-\u02AF\u0370-\u058F\u1E00-\u1EFF]+)*)*/gu;
 
@@ -35,7 +37,10 @@
   function detectDirection(value) {
     let rtlRuns = 0;
     let ltrRuns = 0;
+    let rtlCharactersTotal = 0;
+    let ltrCharactersTotal = 0;
     let firstDirection = "auto";
+    let hasNonTechnicalLtr = false;
 
     for (const segment of String(value ?? "").split(/\s+/u)) {
       let rtlCharacters = 0;
@@ -57,6 +62,9 @@
       }
 
       const segmentDirection = rtlCharacters >= ltrCharacters ? "rtl" : "ltr";
+      rtlCharactersTotal += rtlCharacters;
+      ltrCharactersTotal += ltrCharacters;
+
       if (firstDirection === "auto") {
         firstDirection = segmentDirection;
       }
@@ -65,11 +73,23 @@
         rtlRuns += 1;
       } else {
         ltrRuns += 1;
+        if (!TECH_TOKEN.test(segment.replace(/[.,:;!?()[\]{}"']/gu, ""))) {
+          hasNonTechnicalLtr = true;
+        }
       }
     }
 
     if (rtlRuns === 0 && ltrRuns === 0) {
       return "auto";
+    }
+
+    if (
+      rtlRuns > 0 &&
+      ltrRuns > rtlRuns &&
+      !hasNonTechnicalLtr &&
+      rtlCharactersTotal >= Math.max(2, ltrCharactersTotal * 0.25)
+    ) {
+      return "rtl";
     }
 
     if (rtlRuns === ltrRuns) {

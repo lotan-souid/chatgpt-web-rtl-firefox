@@ -1,10 +1,14 @@
 :is(
   [data-message-author-role],
-  article[data-testid^="conversation-turn-"]
+  article[data-testid^="conversation-turn-"],
+  .markdown,
+  .prose
 )[data-chatgpt-rtl="true"],
 :is(
   [data-message-author-role],
-  article[data-testid^="conversation-turn-"]
+  article[data-testid^="conversation-turn-"],
+  .markdown,
+  .prose
 ) :is(
   p,
   li,
@@ -15,15 +19,25 @@
   h4,
   h5,
   h6,
+  td,
+  th,
+  figcaption,
+  caption,
+  summary,
   .whitespace-pre-wrap
 )[data-chatgpt-rtl="true"],
 :is(
   #prompt-textarea,
   textarea[data-id="root"],
-  form [contenteditable="true"]
+  form [contenteditable="true"],
+  [role="textbox"]
 )[data-chatgpt-rtl="true"] {
   text-align: start !important;
   unicode-bidi: isolate;
+}
+
+[data-chatgpt-rtl="container"] {
+  unicode-bidi: isolate !important;
 }
 
 [data-chatgpt-rtl="true"][dir="rtl"] {
@@ -48,40 +62,60 @@
 /* Technical content should remain predictable and copyable. */
 :is(
   [data-message-author-role],
-  article[data-testid^="conversation-turn-"]
+  article[data-testid^="conversation-turn-"],
+  .markdown,
+  .prose
 ) :is(
-  pre,
-  code,
-  kbd,
-  samp,
+  pre[data-chatgpt-rtl-pre="code"],
+  pre[data-chatgpt-rtl-pre="code"] *,
+  code[data-chatgpt-rtl-pre="code"],
   table,
   math,
   svg,
   [class*="katex"],
   [class*="math"]
-),
-:is(
-  [data-message-author-role],
-  article[data-testid^="conversation-turn-"]
-) :is(
-  pre,
-  code,
-  kbd,
-  samp,
-  table,
-  math,
-  svg,
-  [class*="katex"],
-  [class*="math"]
-) * {
+) {
   direction: ltr !important;
   text-align: left !important;
   unicode-bidi: isolate !important;
 }
 
-[dir="rtl"] :is(ul, ol) {
+:is(
+  [data-message-author-role],
+  article[data-testid^="conversation-turn-"],
+  .markdown,
+  .prose
+) pre[data-chatgpt-rtl-pre="prose"],
+:is(
+  [data-message-author-role],
+  article[data-testid^="conversation-turn-"],
+  .markdown,
+  .prose
+) pre[data-chatgpt-rtl-pre="prose"] code {
+  direction: rtl !important;
+  text-align: right !important;
+  unicode-bidi: isolate !important;
+  white-space: pre-wrap !important;
+}
+
+[dir="rtl"] :is(ul, ol),
+[data-chatgpt-rtl-list="rtl"] {
   padding-inline-start: 1.5rem;
   padding-inline-end: 0;
+}
+
+[data-chatgpt-rtl-list="rtl"] > li,
+[data-chatgpt-rtl-list-item="rtl"] {
+  direction: rtl !important;
+  text-align: right !important;
+  unicode-bidi: isolate !important;
+}
+
+[data-chatgpt-rtl-list="ltr"] > li,
+[data-chatgpt-rtl-list-item="ltr"] {
+  direction: ltr !important;
+  text-align: left !important;
+  unicode-bidi: isolate !important;
 }
 
 [dir="rtl"] blockquote {

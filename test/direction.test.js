@@ -46,3 +46,7 @@ test("splits multi-word English terms into isolated LTR runs", () => {
     ]
   );
 });
+
+test("keeps Hebrew technical prose RTL despite acronym-heavy English terms", () => {
+  assert.equal(detectDirection("API JSON CSS הם מונחים טכניים נפוצים"), "rtl");
+});
