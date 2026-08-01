@@ -9,12 +9,63 @@
   <body>
     <main>
       <h1>ChatGPT Web RTL</h1>
-      <label>
-        <input id="patch-composer" type="checkbox">
-        החל כיוון אוטומטי גם על תיבת הכתיבה
-      </label>
+
+      <section>
+        <label class="row">
+          <input id="enabled" type="checkbox">
+          <span>
+            <strong>הפעלת התוסף</strong>
+            <small>כיבוי מחזיר את ChatGPT להתנהגות המקורית מיד, בלי לרענן את הדף.</small>
+          </span>
+        </label>
+      </section>
+
+      <fieldset id="details">
+        <legend>אופן הזיהוי</legend>
+
+        <label class="row">
+          <input id="force-rtl" type="checkbox">
+          <span>
+            <strong>אילוץ עברית בכל ההודעות</strong>
+            <small>מתאים למי שכותב כמעט תמיד בעברית. בלוקים של קוד נשארים משמאל לימין.</small>
+          </span>
+        </label>
+
+        <label class="row">
+          <input id="patch-composer" type="checkbox">
+          <span>
+            <strong>כיוון אוטומטי בתיבת הכתיבה</strong>
+            <small>כל שורה בתיבת ההודעה מקבלת כיוון משלה בזמן ההקלדה.</small>
+          </span>
+        </label>
+
+        <label class="row">
+          <input id="patch-sidebar" type="checkbox">
+          <span>
+            <strong>כיוון אוטומטי ברשימת השיחות</strong>
+            <small>כותרות שיחה בעברית מיושרות לימין בסרגל הצד.</small>
+          </span>
+        </label>
+
+        <label class="row">
+          <input id="smart-code-blocks" type="checkbox">
+          <span>
+            <strong>זיהוי טקסט עברי בתוך בלוק קוד</strong>
+            <small>כשהמודל עוטף פסקה בעברית בבלוק קוד, היא תוצג מימין לשמאל. קוד אמיתי לא מושפע.</small>
+          </span>
+        </label>
+      </fieldset>
+
       <p id="status" role="status" aria-live="polite"></p>
+
+      <section class="footnote">
+        <p>קיצור המקלדת <kbd>Alt+Shift+R</kbd> מפעיל ומכבה את התוסף. אפשר לשנות אותו דרך
+          <code>about:addons</code> ← גלגל השיניים ← ניהול קיצורי מקלדת.</p>
+        <p><button id="reset" type="button">שחזור הגדרות ברירת המחדל</button></p>
+      </section>
     </main>
+
+    <script src="../src/settings.js"></script>
     <script src="options.js"></script>
   </body>
 </html>

@@ -1,68 +1,55 @@
 "use strict";
 
 (() => {
+  const extensionApi = globalThis.browser ?? globalThis.chrome;
   const settingsApi = globalThis.ChatGptRtlSettings;
 
   const controls = {
     enabled: document.querySelector("#enabled"),
     forceRtl: document.querySelector("#force-rtl"),
     patchComposer: document.querySelector("#patch-composer"),
-    patchSidebar: document.querySelector("#patch-sidebar"),
-    smartCodeBlocks: document.querySelector("#smart-code-blocks")
+    patchSidebar: document.querySelector("#patch-sidebar")
   };
 
   const details = document.querySelector("#details");
   const status = document.querySelector("#status");
-  let statusTimer;
-
-  function announce(message) {
-    status.textContent = message;
-    clearTimeout(statusTimer);
-    statusTimer = setTimeout(() => {
-      status.textContent = "";
-    }, 1500);
-  }
 
   function render(settings) {
     controls.enabled.checked = settings.enabled;
     controls.forceRtl.checked = settings.mode === "rtl";
     controls.patchComposer.checked = settings.patchComposer;
     controls.patchSidebar.checked = settings.patchSidebar;
-    controls.smartCodeBlocks.checked = settings.smartCodeBlocks;
     details.disabled = !settings.enabled;
   }
 
-  async function save() {
-    await settingsApi.write({
+  function currentPatch() {
+    return {
       enabled: controls.enabled.checked,
       mode: controls.forceRtl.checked ? "rtl" : "auto",
       patchComposer: controls.patchComposer.checked,
-      patchSidebar: controls.patchSidebar.checked,
-      smartCodeBlocks: controls.smartCodeBlocks.checked
-    });
+      patchSidebar: controls.patchSidebar.checked
+    };
+  }
 
-    details.disabled = !controls.enabled.checked;
-    announce("ההגדרה נשמרה.");
+  async function save() {
+    const patch = currentPatch();
+    await settingsApi.write(patch);
+    details.disabled = !patch.enabled;
+    status.textContent = "נשמר.";
   }
 
   for (const control of Object.values(controls)) {
     control.addEventListener("change", () => {
       save().catch((error) => {
-        status.textContent = `שמירת ההגדרה נכשלה: ${error.message}`;
+        status.textContent = `השמירה נכשלה: ${error.message}`;
       });
     });
   }
 
-  document.querySelector("#reset").addEventListener("click", () => {
-    settingsApi
-      .write({ ...settingsApi.DEFAULTS })
-      .then(() => {
-        render(settingsApi.DEFAULTS);
-        announce("ההגדרות שוחזרו.");
-      })
-      .catch((error) => {
-        status.textContent = `שחזור ההגדרות נכשל: ${error.message}`;
-      });
+  document.querySelector("#options").addEventListener("click", (event) => {
+    event.preventDefault();
+    extensionApi.runtime.openOptionsPage();
+    globalThis.close();
   });
 
   settingsApi

@@ -1,21 +1,25 @@
 {
   "manifest_version": 3,
   "name": "ChatGPT Web RTL",
-  "version": "0.1.4",
-  "description": "Adds automatic right-to-left support for Hebrew conversations in ChatGPT.",
+  "version": "0.2.0",
+  "description": "Adds automatic right-to-left support for Hebrew and mixed Hebrew/English conversations in ChatGPT.",
   "permissions": [
     "storage"
   ],
   "browser_specific_settings": {
     "gecko": {
-      "id": "chatgpt-web-rtl-firefox@local",
-      "strict_min_version": "142.0",
+      "id": "chatgpt-web-rtl@lotan-souid",
+      "strict_min_version": "140.0",
       "data_collection_permissions": {
         "required": [
           "none"
         ]
       }
     }
+  },
+  "icons": {
+    "48": "icons/icon.svg",
+    "96": "icons/icon.svg"
   },
   "content_scripts": [
     {
@@ -27,12 +31,36 @@
         "src/content.css"
       ],
       "js": [
+        "src/settings.js",
         "src/direction.js",
         "src/content.js"
       ],
-      "run_at": "document_idle"
+      "run_at": "document_start",
+      "all_frames": false
     }
   ],
+  "background": {
+    "scripts": [
+      "src/settings.js",
+      "src/background.js"
+    ]
+  },
+  "action": {
+    "default_title": "ChatGPT Web RTL",
+    "default_popup": "popup/popup.html",
+    "default_icon": {
+      "48": "icons/icon.svg",
+      "96": "icons/icon.svg"
+    }
+  },
+  "commands": {
+    "toggle-rtl": {
+      "suggested_key": {
+        "default": "Alt+Shift+R"
+      },
+      "description": "Toggle ChatGPT Web RTL on the current page"
+    }
+  },
   "options_ui": {
     "page": "options/options.html",
     "open_in_tab": true

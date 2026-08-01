@@ -5,6 +5,7 @@
 
 body {
   margin: 0;
+  line-height: 1.5;
 }
 
 main {
@@ -17,19 +18,78 @@ h1 {
   margin-block-end: 2rem;
 }
 
-label {
-  display: flex;
-  gap: 0.75rem;
-  align-items: center;
-  font-size: 1.05rem;
+fieldset {
+  margin: 1.5rem 0 0;
+  padding: 0.5rem 1rem 1rem;
+  border: 1px solid rgba(128, 128, 128, 0.35);
+  border-radius: 0.5rem;
 }
 
-input {
+fieldset[disabled] {
+  opacity: 0.45;
+}
+
+legend {
+  padding-inline: 0.4rem;
+  font-size: 0.9rem;
+  opacity: 0.8;
+}
+
+.row {
+  display: flex;
+  gap: 0.75rem;
+  align-items: start;
+  padding-block: 0.6rem;
+  cursor: pointer;
+}
+
+.row input {
+  margin: 0;
+  flex: none;
   inline-size: 1.1rem;
   block-size: 1.1rem;
+  margin-block-start: 0.15rem;
+}
+
+.row strong {
+  display: block;
+  font-weight: 600;
+}
+
+.row small {
+  display: block;
+  margin-block-start: 0.15rem;
+  font-size: 0.85rem;
+  opacity: 0.72;
 }
 
 #status {
   min-block-size: 1.5rem;
+  margin-block: 1rem 0;
   color: #258825;
+}
+
+.footnote {
+  margin-block-start: 2rem;
+  padding-block-start: 1rem;
+  border-block-start: 1px solid rgba(128, 128, 128, 0.35);
+  font-size: 0.88rem;
+  opacity: 0.85;
+}
+
+kbd,
+code {
+  font-family: ui-monospace, monospace;
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+
+button {
+  font: inherit;
+  padding: 0.4rem 0.9rem;
+  border-radius: 0.4rem;
+  border: 1px solid rgba(128, 128, 128, 0.5);
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
 }

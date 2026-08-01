@@ -1,0 +1,64 @@
+:root {
+  color-scheme: light dark;
+}
+
+body {
+  width: 17rem;
+  margin: 0;
+  padding: 0.9rem 1rem 1rem;
+  font: message-box;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+h1 {
+  margin: 0 0 0.75rem;
+  font-size: 0.95rem;
+}
+
+fieldset {
+  margin: 0.5rem 0 0;
+  padding: 0.5rem 0 0;
+  border: 0;
+  border-top: 1px solid rgba(128, 128, 128, 0.35);
+}
+
+fieldset[disabled] {
+  opacity: 0.45;
+}
+
+.row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: baseline;
+  padding: 0.2rem 0;
+  cursor: pointer;
+}
+
+.row input {
+  margin: 0;
+  flex: none;
+}
+
+#status {
+  margin: 0.6rem 0 0;
+  min-height: 1.2em;
+  color: #10a37f;
+  font-size: 0.8rem;
+}
+
+.hint {
+  margin: 0.2rem 0 0.6rem;
+  font-size: 0.78rem;
+  opacity: 0.7;
+}
+
+kbd {
+  font-family: monospace;
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+
+a {
+  font-size: 0.8rem;
+}

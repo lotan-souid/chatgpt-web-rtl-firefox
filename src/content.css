@@ -1,126 +1,160 @@
-:is(
-  [data-message-author-role],
-  article[data-testid^="conversation-turn-"],
-  .markdown,
-  .prose
-)[data-chatgpt-rtl="true"],
-:is(
-  [data-message-author-role],
-  article[data-testid^="conversation-turn-"],
-  .markdown,
-  .prose
-) :is(
-  p,
-  li,
-  blockquote,
-  h1,
-  h2,
-  h3,
-  h4,
-  h5,
-  h6,
-  td,
-  th,
-  figcaption,
-  caption,
-  summary,
-  .whitespace-pre-wrap
-)[data-chatgpt-rtl="true"],
-:is(
-  #prompt-textarea,
-  textarea[data-id="root"],
-  form [contenteditable="true"],
-  [role="textbox"]
-)[data-chatgpt-rtl="true"] {
-  text-align: start !important;
+/*
+ * Every rule is gated on an attribute of <html>, which the content script
+ * writes before first paint:
+ *
+ *   data-chatgpt-rtl          on | off      master switch
+ *   data-chatgpt-rtl-mode     auto | rtl    detect per block, or force RTL
+ *   data-chatgpt-rtl-composer on | off      prompt box handling
+ *   data-chatgpt-rtl-sidebar  on | off      conversation list handling
+ *
+ * Per-element decisions come from the content script as:
+ *
+ *   data-chatgpt-rtl-dir      rtl | ltr | auto
+ *   data-chatgpt-rtl-role     block | list | container | pre-code | pre-prose
+ *
+ * Direction is driven by these data attributes rather than by `dir`, so the
+ * styling survives a React re-render that drops the `dir` attribute.
+ */
+
+/* ---------------------------------------------------------------- messages */
+
+html[data-chatgpt-rtl="on"] [data-chatgpt-rtl-role="container"] {
   unicode-bidi: isolate;
 }
 
-[data-chatgpt-rtl="container"] {
-  unicode-bidi: isolate !important;
-}
-
-[data-chatgpt-rtl="true"][dir="rtl"] {
+html[data-chatgpt-rtl="on"] [data-chatgpt-rtl-dir="rtl"] {
   direction: rtl !important;
   text-align: right !important;
+  unicode-bidi: isolate;
 }
 
-[data-chatgpt-rtl="true"][dir="ltr"] {
+html[data-chatgpt-rtl="on"] [data-chatgpt-rtl-dir="ltr"] {
   direction: ltr !important;
   text-align: left !important;
+  unicode-bidi: isolate;
 }
 
-[data-chatgpt-rtl="true"][dir="auto"] {
+/* No strong character at all: let the browser resolve each paragraph. */
+html[data-chatgpt-rtl="on"] [data-chatgpt-rtl-dir="auto"] {
   text-align: start !important;
+  unicode-bidi: plaintext;
 }
 
-[data-chatgpt-rtl-inline-ltr="true"] {
-  direction: ltr !important;
-  unicode-bidi: isolate !important;
+/*
+ * Inline technical runs inside Hebrew prose. Isolating them is what keeps
+ * trailing punctuation, slashes and brackets on the correct side without
+ * rewriting any of ChatGPT's DOM.
+ */
+html[data-chatgpt-rtl="on"] [data-chatgpt-rtl-dir="rtl"] :is(code, kbd, samp, var, time) {
+  direction: ltr;
+  unicode-bidi: isolate;
 }
 
-/* Technical content should remain predictable and copyable. */
-:is(
-  [data-message-author-role],
-  article[data-testid^="conversation-turn-"],
-  .markdown,
-  .prose
-) :is(
-  pre[data-chatgpt-rtl-pre="code"],
-  pre[data-chatgpt-rtl-pre="code"] *,
-  code[data-chatgpt-rtl-pre="code"],
-  table,
-  math,
-  svg,
-  [class*="katex"],
-  [class*="math"]
-) {
+/* ------------------------------------------------------------------- lists */
+
+html[data-chatgpt-rtl="on"] [data-chatgpt-rtl-role="list"][data-chatgpt-rtl-dir="rtl"] {
+  /* ChatGPT uses physical padding utilities, so logical properties alone
+     would leave the bullets hanging off the wrong edge. */
+  padding-right: 1.5rem !important;
+  padding-left: 0 !important;
+}
+
+html[data-chatgpt-rtl="on"] [data-chatgpt-rtl-role="list"][data-chatgpt-rtl-dir="ltr"] {
+  padding-left: 1.5rem !important;
+  padding-right: 0 !important;
+}
+
+/* -------------------------------------------------------------- quotations */
+
+html[data-chatgpt-rtl="on"] blockquote[data-chatgpt-rtl-dir="rtl"] {
+  border-left: 0 !important;
+  border-right: 0.25rem solid color-mix(in srgb, currentColor 25%, transparent);
+  padding-left: 0 !important;
+  padding-right: 1rem !important;
+}
+
+/* ------------------------------------------------------------- code blocks */
+
+/*
+ * Source code is always left to right: indentation, operators and diffs are
+ * unreadable otherwise. Isolation lets a Hebrew comment inside a line render
+ * correctly without dragging the rest of the line with it.
+ */
+html[data-chatgpt-rtl="on"] [data-chatgpt-rtl-role="pre-code"] {
   direction: ltr !important;
   text-align: left !important;
   unicode-bidi: isolate !important;
 }
 
-:is(
-  [data-message-author-role],
-  article[data-testid^="conversation-turn-"],
-  .markdown,
-  .prose
-) pre[data-chatgpt-rtl-pre="prose"],
-:is(
-  [data-message-author-role],
-  article[data-testid^="conversation-turn-"],
-  .markdown,
-  .prose
-) pre[data-chatgpt-rtl-pre="prose"] code {
+html[data-chatgpt-rtl="on"] [data-chatgpt-rtl-role="pre-code"] * {
+  direction: ltr !important;
+  text-align: left !important;
+}
+
+/* Hebrew prose that the model wrapped in a code fence by mistake. */
+html[data-chatgpt-rtl="on"] [data-chatgpt-rtl-role="pre-prose"],
+html[data-chatgpt-rtl="on"] [data-chatgpt-rtl-role="pre-prose"] code {
   direction: rtl !important;
   text-align: right !important;
   unicode-bidi: isolate !important;
   white-space: pre-wrap !important;
 }
 
-[dir="rtl"] :is(ul, ol),
-[data-chatgpt-rtl-list="rtl"] {
-  padding-inline-start: 1.5rem;
-  padding-inline-end: 0;
-}
+/* --------------------------------------------------------------- maths, UI */
 
-[data-chatgpt-rtl-list="rtl"] > li,
-[data-chatgpt-rtl-list-item="rtl"] {
-  direction: rtl !important;
-  text-align: right !important;
-  unicode-bidi: isolate !important;
-}
-
-[data-chatgpt-rtl-list="ltr"] > li,
-[data-chatgpt-rtl-list-item="ltr"] {
+/* Formulae and vector graphics have their own coordinate system. */
+html[data-chatgpt-rtl="on"] :is(math, svg, .katex, .katex-display, [class*="katex"]) {
   direction: ltr !important;
-  text-align: left !important;
   unicode-bidi: isolate !important;
 }
 
-[dir="rtl"] blockquote {
-  border-inline-start: 0;
-  border-inline-end: 0.25rem solid currentColor;
-  padding-inline-start: 0;
-  padding-inline-end: 1rem;
+/* ---------------------------------------------------------------- composer */
+
+/*
+ * `plaintext` resolves direction per paragraph, so a Hebrew line and an
+ * English line can sit in the same prompt and each aligns itself as it is
+ * typed. No script touches the editable node, which is what makes this safe
+ * against ChatGPT's editor implementation changing.
+ */
+html[data-chatgpt-rtl-composer="on"] :is(
+  #prompt-textarea,
+  textarea[data-id="root"],
+  form [contenteditable="true"],
+  form textarea,
+  [role="textbox"]
+) {
+  unicode-bidi: plaintext;
+  text-align: start !important;
+}
+
+html[data-chatgpt-rtl-composer="on"] :is(
+  #prompt-textarea,
+  form [contenteditable="true"],
+  [role="textbox"]
+) > :is(p, div, li, blockquote, h1, h2, h3, h4, h5, h6) {
+  unicode-bidi: plaintext;
+  text-align: start !important;
+}
+
+/* Forced mode also parks the caret and the placeholder on the right. */
+html[data-chatgpt-rtl-composer="on"][data-chatgpt-rtl-mode="rtl"] :is(
+  #prompt-textarea,
+  textarea[data-id="root"],
+  form [contenteditable="true"],
+  [role="textbox"]
+) {
+  direction: rtl !important;
+}
+
+/* ----------------------------------------------------------------- sidebar */
+
+/*
+ * Conversation titles are single lines, so the first-strong-character rule
+ * that `plaintext` implements is exactly right for them. Only inline
+ * properties are set here: touching `direction` would reverse the flex
+ * layout of the history rows.
+ */
+html[data-chatgpt-rtl-sidebar="on"] :is(nav, #history) a :is(div, span, h3) {
+  unicode-bidi: plaintext;
+  text-align: start;
 }
