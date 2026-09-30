@@ -3,14 +3,18 @@
  * writes before first paint:
  *
  *   data-chatgpt-rtl          on | off      master switch
- *   data-chatgpt-rtl-mode     auto | rtl    detect per block, or force RTL
+ *   data-chatgpt-rtl-mode     message | auto | rtl
+ *                             per message, per block, or forced RTL
  *   data-chatgpt-rtl-composer on | off      prompt box handling
  *   data-chatgpt-rtl-sidebar  on | off      conversation list handling
+ *   data-chatgpt-rtl-font     default | system | serif
+ *   data-chatgpt-rtl-site     the matched entry from src/sites.js
  *
  * Per-element decisions come from the content script as:
  *
  *   data-chatgpt-rtl-dir      rtl | ltr | auto
  *   data-chatgpt-rtl-role     block | list | container | pre-code | pre-prose
+ *   data-chatgpt-rtl-align    rtl | ltr     table cells: the table's side
  *
  * Direction is driven by these data attributes rather than by `dir`, so the
  * styling survives a React re-render that drops the `dir` attribute.
@@ -48,6 +52,46 @@ html[data-chatgpt-rtl="on"] [data-chatgpt-rtl-dir="auto"] {
 html[data-chatgpt-rtl="on"] [data-chatgpt-rtl-dir="rtl"] :is(code, kbd, samp, var, time) {
   direction: ltr;
   unicode-bidi: isolate;
+}
+
+/* ------------------------------------------------------------------ tables */
+
+/*
+ * A cell keeps its own direction, so the word order inside it is right, but
+ * lines up with its table. Declared after the direction rules, which carry
+ * the same specificity, so that the table's side wins.
+ */
+html[data-chatgpt-rtl="on"] [data-chatgpt-rtl-align="rtl"] {
+  text-align: right !important;
+}
+
+html[data-chatgpt-rtl="on"] [data-chatgpt-rtl-align="ltr"] {
+  text-align: left !important;
+}
+
+/*
+ * Hebrew tables get a full grid and a shaded header row. The site's own
+ * horizontal rules alone do not show where a column starts once the columns
+ * run from the right. Colours derive from the text colour, so the grid suits
+ * light and dark themes alike.
+ */
+html[data-chatgpt-rtl="on"] table[data-chatgpt-rtl-dir="rtl"] {
+  border-collapse: collapse !important;
+  border: 1px solid color-mix(in srgb, currentColor 18%, transparent) !important;
+}
+
+html[data-chatgpt-rtl="on"] table[data-chatgpt-rtl-dir="rtl"] :is(td, th) {
+  border: 1px solid color-mix(in srgb, currentColor 18%, transparent) !important;
+  padding: 0.8em 1.2em !important;
+}
+
+html[data-chatgpt-rtl="on"] table[data-chatgpt-rtl-dir="rtl"] th {
+  background-color: color-mix(in srgb, currentColor 6%, transparent) !important;
+  font-weight: 600;
+}
+
+html[data-chatgpt-rtl="on"] table[data-chatgpt-rtl-dir="rtl"] tbody tr:nth-child(even) {
+  background-color: color-mix(in srgb, currentColor 3%, transparent);
 }
 
 /* ------------------------------------------------------------------- lists */
@@ -116,21 +160,25 @@ html[data-chatgpt-rtl="on"] :is(math, svg, .katex, .katex-display, [class*="kate
  * typed. No script touches the editable node, which is what makes this safe
  * against ChatGPT's editor implementation changing.
  */
+/*
+ * These are the selectors every chat front-end shares; the extras a specific
+ * site needs are compiled from `sites.js` at runtime. `[role="textbox"]` is
+ * paired with actual editability on purpose — on its own the role also matches
+ * read-only widgets that must keep the page's direction.
+ */
 html[data-chatgpt-rtl-composer="on"] :is(
-  #prompt-textarea,
-  textarea[data-id="root"],
   form [contenteditable="true"],
   form textarea,
-  [role="textbox"]
+  [contenteditable="true"][role="textbox"],
+  textarea[role="textbox"]
 ) {
   unicode-bidi: plaintext;
   text-align: start !important;
 }
 
 html[data-chatgpt-rtl-composer="on"] :is(
-  #prompt-textarea,
   form [contenteditable="true"],
-  [role="textbox"]
+  [contenteditable="true"][role="textbox"]
 ) > :is(p, div, li, blockquote, h1, h2, h3, h4, h5, h6) {
   unicode-bidi: plaintext;
   text-align: start !important;
@@ -138,10 +186,10 @@ html[data-chatgpt-rtl-composer="on"] :is(
 
 /* Forced mode also parks the caret and the placeholder on the right. */
 html[data-chatgpt-rtl-composer="on"][data-chatgpt-rtl-mode="rtl"] :is(
-  #prompt-textarea,
-  textarea[data-id="root"],
   form [contenteditable="true"],
-  [role="textbox"]
+  form textarea,
+  [contenteditable="true"][role="textbox"],
+  textarea[role="textbox"]
 ) {
   direction: rtl !important;
 }
@@ -154,7 +202,40 @@ html[data-chatgpt-rtl-composer="on"][data-chatgpt-rtl-mode="rtl"] :is(
  * properties are set here: touching `direction` would reverse the flex
  * layout of the history rows.
  */
-html[data-chatgpt-rtl-sidebar="on"] :is(nav, #history) a :is(div, span, h3) {
+html[data-chatgpt-rtl-sidebar="on"]
+  :is(nav, aside, [role="navigation"]) a :is(div, span, p, h3) {
   unicode-bidi: plaintext;
   text-align: start;
+}
+
+/* -------------------------------------------------------------------- font */
+
+/*
+ * Optional, and off by default. The stacks name real Hebrew faces first and
+ * fall back to the system UI font, so nothing is downloaded and nothing
+ * changes on a machine that has none of them installed.
+ *
+ * Only blocks that resolved right-to-left are restyled: Latin paragraphs and
+ * source code keep the site's own typography. Line height is relaxed along
+ * with the face, because Hebrew has no ascenders or descenders to separate
+ * consecutive lines visually.
+ */
+html[data-chatgpt-rtl="on"][data-chatgpt-rtl-font="system"]
+  [data-chatgpt-rtl-dir="rtl"]:not([data-chatgpt-rtl-role^="pre-"]) {
+  font-family: Rubik, Heebo, Assistant, "Noto Sans Hebrew", "Arial Hebrew",
+    system-ui, sans-serif;
+  line-height: 1.75;
+}
+
+html[data-chatgpt-rtl="on"][data-chatgpt-rtl-font="serif"]
+  [data-chatgpt-rtl-dir="rtl"]:not([data-chatgpt-rtl-role^="pre-"]) {
+  font-family: "Frank Ruehl CLM", "Noto Serif Hebrew", "David CLM", "Times New Roman",
+    serif;
+  line-height: 1.8;
+}
+
+/* Inline technical runs keep the monospace face they were given. */
+html[data-chatgpt-rtl="on"]:not([data-chatgpt-rtl-font="default"])
+  [data-chatgpt-rtl-dir="rtl"] :is(code, kbd, samp, var) {
+  font-family: ui-monospace, monospace;
 }

@@ -1,14 +1,14 @@
 {
   "manifest_version": 3,
   "name": "ChatGPT Web RTL",
-  "version": "0.2.0",
-  "description": "Adds automatic right-to-left support for Hebrew and mixed Hebrew/English conversations in ChatGPT.",
+  "version": "0.4.0",
+  "description": "Adds automatic right-to-left support for Hebrew and mixed Hebrew/English conversations in ChatGPT, Claude, Gemini and other AI chats.",
   "permissions": [
     "storage"
   ],
   "browser_specific_settings": {
     "gecko": {
-      "id": "chatgpt-web-rtl@lotan-souid",
+      "id": "chatgpt-web-rtl-firefox@local",
       "strict_min_version": "140.0",
       "data_collection_permissions": {
         "required": [
@@ -25,14 +25,28 @@
     {
       "matches": [
         "https://chatgpt.com/*",
-        "https://chat.openai.com/*"
+        "https://chat.openai.com/*",
+        "https://claude.ai/*",
+        "https://gemini.google.com/*",
+        "https://aistudio.google.com/*",
+        "https://chat.deepseek.com/*",
+        "https://chat.qwen.ai/*",
+        "https://chat.qwenlm.ai/*",
+        "https://grok.com/*",
+        "https://chat.mistral.ai/*",
+        "https://www.perplexity.ai/*",
+        "https://copilot.microsoft.com/*",
+        "https://poe.com/*",
+        "https://duck.ai/*"
       ],
       "css": [
         "src/content.css"
       ],
       "js": [
         "src/settings.js",
+        "src/sites.js",
         "src/direction.js",
+        "src/toggle.js",
         "src/content.js"
       ],
       "run_at": "document_start",

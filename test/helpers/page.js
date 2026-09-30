@@ -6,7 +6,13 @@ const vm = require("node:vm");
 const { JSDOM } = require("jsdom");
 
 const ROOT = path.join(__dirname, "..", "..");
-const SCRIPTS = ["src/settings.js", "src/direction.js", "src/content.js"];
+const SCRIPTS = [
+  "src/settings.js",
+  "src/sites.js",
+  "src/direction.js",
+  "src/toggle.js",
+  "src/content.js"
+];
 
 /** Minimal stand-in for the pieces of `browser.storage` the extension uses. */
 function createStorageStub(initial) {
@@ -51,11 +57,11 @@ function createStorageStub(initial) {
  * `settle()` drains the microtask queue and two animation frames, which is
  * how long the observer takes to batch and flush a change.
  */
-async function createPage(bodyHtml, initialSettings = {}) {
+async function createPage(bodyHtml, initialSettings = {}, options = {}) {
   const dom = new JSDOM(`<!doctype html><html><body>${bodyHtml}</body></html>`, {
     runScripts: "outside-only",
     pretendToBeVisual: true,
-    url: "https://chatgpt.com/"
+    url: options.url ?? "https://chatgpt.com/"
   });
 
   const { window } = dom;

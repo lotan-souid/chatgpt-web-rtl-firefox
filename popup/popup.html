@@ -13,10 +13,21 @@
       <span>הפעלת התוסף</span>
     </label>
 
+    <!-- Outside the fieldset on purpose: it must stay usable while the
+         extension is off, since it is how the page switches it back on. -->
+    <label class="row">
+      <input id="floating-toggle" type="checkbox">
+      <span>כפתור הפעלה בתוך הדף</span>
+    </label>
+
     <fieldset id="details">
-      <label class="row">
-        <input id="force-rtl" type="checkbox">
-        <span>אילוץ עברית בכל ההודעות</span>
+      <label class="field">
+        <span>כיוון הטקסט</span>
+        <select id="mode">
+          <option value="message">לפי הודעה</option>
+          <option value="auto">לפי פסקה</option>
+          <option value="rtl">תמיד מימין לשמאל</option>
+        </select>
       </label>
 
       <label class="row">

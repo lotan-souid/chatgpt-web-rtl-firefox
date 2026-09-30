@@ -6,9 +6,10 @@
 
   const controls = {
     enabled: document.querySelector("#enabled"),
-    forceRtl: document.querySelector("#force-rtl"),
+    mode: document.querySelector("#mode"),
     patchComposer: document.querySelector("#patch-composer"),
-    patchSidebar: document.querySelector("#patch-sidebar")
+    patchSidebar: document.querySelector("#patch-sidebar"),
+    floatingToggle: document.querySelector("#floating-toggle")
   };
 
   const details = document.querySelector("#details");
@@ -16,18 +17,20 @@
 
   function render(settings) {
     controls.enabled.checked = settings.enabled;
-    controls.forceRtl.checked = settings.mode === "rtl";
+    controls.mode.value = settings.mode;
     controls.patchComposer.checked = settings.patchComposer;
     controls.patchSidebar.checked = settings.patchSidebar;
+    controls.floatingToggle.checked = settings.floatingToggle;
     details.disabled = !settings.enabled;
   }
 
   function currentPatch() {
     return {
       enabled: controls.enabled.checked,
-      mode: controls.forceRtl.checked ? "rtl" : "auto",
+      mode: controls.mode.value,
       patchComposer: controls.patchComposer.checked,
-      patchSidebar: controls.patchSidebar.checked
+      patchSidebar: controls.patchSidebar.checked,
+      floatingToggle: controls.floatingToggle.checked
     };
   }
 

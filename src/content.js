@@ -4,24 +4,22 @@
   const extensionApi = globalThis.browser ?? globalThis.chrome;
   const directionApi = globalThis.ChatGptRtlDirection;
   const settingsApi = globalThis.ChatGptRtlSettings;
+  const sitesApi = globalThis.ChatGptRtlSites;
+  const toggleApi = globalThis.ChatGptRtlToggle;
 
-  if (!directionApi || !settingsApi) {
+  if (!directionApi || !settingsApi || !sitesApi) {
     return;
   }
 
   const DEFAULT_SETTINGS = settingsApi.DEFAULTS;
 
   /**
-   * Containers that hold conversation text. Direction is only ever resolved
-   * inside one of these, so the surrounding application chrome keeps whatever
-   * direction ChatGPT gave it.
+   * Containers that hold conversation text, resolved once for this host.
+   * Direction is only ever resolved inside one of these, so the surrounding
+   * application chrome keeps whatever direction the site gave it.
    */
-  const MESSAGE_ROOT_SELECTORS = [
-    "[data-message-author-role]",
-    "article[data-testid^=\"conversation-turn-\"]",
-    ".markdown",
-    ".prose"
-  ];
+  const site = sitesApi.resolveSite(location.hostname);
+  const MESSAGE_ROOT_SELECTORS = site.roots;
   const MESSAGE_ROOT_SELECTOR = MESSAGE_ROOT_SELECTORS.join(", ");
 
   // `table` is included so that Hebrew tables lay their columns out from the
@@ -30,6 +28,7 @@
     ":is(p, li, blockquote, h1, h2, h3, h4, h5, h6, table, td, th, dt, dd, figcaption, caption, summary, .whitespace-pre-wrap)";
   const LIST_SELECTOR = ":is(ul, ol)";
   const PRE_SELECTOR = "pre";
+  const CELL_SELECTOR = ":is(td, th)";
   const SCAN_SELECTORS = [BLOCK_SELECTOR, LIST_SELECTOR, PRE_SELECTOR];
   const SCAN_SELECTOR = SCAN_SELECTORS.join(", ");
 
@@ -53,7 +52,9 @@
     ".monaco-editor",
     "[class*=\"katex\"]",
     "math",
-    "svg"
+    "svg",
+    // The extension's own on-page toggle, so the observer never sees it.
+    "[data-chatgpt-rtl-ui]"
   ].join(", ");
 
   /** Bounded work per animation frame so streaming answers stay smooth. */
@@ -72,9 +73,25 @@
    */
   let generation = 0;
 
+  /**
+   * Bumped on every scan pass. A message's direction is measured at most once
+   * per pass, however many of its blocks ask for it.
+   */
+  let pass = 0;
+
   const pendingRoots = new Set();
-  /** element -> { text, direction, role, generation } — skips redundant writes. */
+  /** message root -> { pass, generation, direction } */
+  const messageState = new WeakMap();
+  /** element -> { text, direction, role, align, generation } — skips redundant writes. */
   const appliedState = new WeakMap();
+  /**
+   * element -> the `dir` the page had before the extension touched it, or
+   * `null` if it had none. Some sites set `dir="auto"` themselves, so
+   * switching the extension off has to put their value back rather than strip
+   * the attribute. Kept apart from `appliedState` because that entry is
+   * replaced on every generation, while this one must survive them all.
+   */
+  const originalDirection = new WeakMap();
 
   const now =
     typeof performance !== "undefined" && typeof performance.now === "function"
@@ -93,24 +110,35 @@
    * Writes direction only when it actually changed. ChatGPT re-renders
    * constantly; skipping no-op writes is what keeps the observer quiet.
    */
-  function writeDirection(element, direction, role, text) {
+  function writeDirection(element, direction, role, text, align = "") {
     const previous = appliedState.get(element);
     const settled =
       previous &&
       previous.generation === generation &&
       previous.direction === direction &&
       previous.role === role &&
+      previous.align === align &&
       element.dataset.chatgptRtlDir === direction;
 
-    appliedState.set(element, { text, direction, role, generation });
+    appliedState.set(element, { text, direction, role, align, generation });
 
     if (settled) {
       return;
     }
 
+    if (!originalDirection.has(element)) {
+      originalDirection.set(element, element.getAttribute("dir"));
+    }
+
     element.dataset.chatgptRtlDir = direction;
     element.dataset.chatgptRtlRole = role;
     element.setAttribute("dir", direction);
+
+    if (align) {
+      element.dataset.chatgptRtlAlign = align;
+    } else {
+      delete element.dataset.chatgptRtlAlign;
+    }
   }
 
   /**
@@ -126,6 +154,55 @@
 
   function resolveDirection(text) {
     return settings.mode === "rtl" ? "rtl" : directionApi.detectDirection(text);
+  }
+
+  /**
+   * The prose of a message, without its code blocks: a long snippet of
+   * source code must not outvote the Hebrew explanation around it.
+   */
+  function proseOf(message) {
+    const walker = document.createTreeWalker(message, NodeFilter.SHOW_TEXT, {
+      acceptNode: (node) =>
+        node.parentElement?.closest(`${PRE_SELECTOR}, ${EXCLUDED_SELECTOR}`)
+          ? NodeFilter.FILTER_REJECT
+          : NodeFilter.FILTER_ACCEPT
+    });
+
+    const parts = [];
+    while (walker.nextNode()) {
+      parts.push(walker.currentNode.nodeValue);
+    }
+
+    return parts.join(" ").replace(/\u00a0/g, " ");
+  }
+
+  /**
+   * In "message" mode every block takes the direction of the message it sits
+   * in, the way a Hebrew Markdown document is laid out: an English product
+   * name or a line that opens with ".com" no longer flips its paragraph, and
+   * the whole answer reads as one right-to-left page. Returns "" when the
+   * mode is different or the message holds no strong character, which leaves
+   * the block to resolve on its own.
+   */
+  function messageDirectionOf(element) {
+    if (settings.mode !== "message") {
+      return "";
+    }
+
+    const message = element.closest(MESSAGE_ROOT_SELECTOR);
+    if (!message) {
+      return "";
+    }
+
+    const cached = messageState.get(message);
+    if (cached && cached.pass === pass && cached.generation === generation) {
+      return cached.direction;
+    }
+
+    const detected = directionApi.detectDirection(proseOf(message));
+    const direction = detected === "rtl" || detected === "ltr" ? detected : "";
+    messageState.set(message, { pass, generation, direction });
+    return direction;
   }
 
   function codeLanguageHint(pre) {
@@ -160,20 +237,57 @@
     }
   }
 
-  function applyTextBlock(element, role) {
+  /**
+   * The direction a table resolved to, so that its cells can align with it.
+   * Tables come before their cells in document order, which means a scan has
+   * normally settled the table already; only a cell reached on its own makes
+   * the table resolve here.
+   */
+  function tableDirectionOf(cell) {
+    const table = cell.closest("table");
+    if (!table || isExcluded(table)) {
+      return "";
+    }
+
+    if (appliedState.get(table)?.generation !== generation) {
+      applyTextBlock(table, "block");
+    }
+
+    const direction = table.dataset.chatgptRtlDir;
+    return direction === "rtl" || direction === "ltr" ? direction : "";
+  }
+
+  /**
+   * `align` overrides only the alignment, never the bidi direction. A cell
+   * reading "Domains" in a Hebrew table keeps its English word order but
+   * lines up on the right with the rest of its column, instead of breaking
+   * the column into a ragged mix of left and right edges.
+   */
+  function applyTextBlock(element, role, align = "") {
     const text = textOf(element);
-    if (unchangedSince(element, text)) {
+    const inherited = messageDirectionOf(element);
+    // Everything a block inherits is part of the cache key: a streamed answer
+    // can flip the direction of its message or table while the text of one
+    // block stays the same.
+    const key = `${inherited}\u0000${align}\u0000${text}`;
+    if (unchangedSince(element, key)) {
       return;
     }
 
     if (!text.trim()) {
       // Remember the empty state too, so placeholder nodes that React keeps
       // re-rendering are not re-measured on every frame.
-      appliedState.set(element, { text, direction: "", role: "", generation });
+      appliedState.set(element, {
+        text: key,
+        direction: "",
+        role: "",
+        align: "",
+        generation
+      });
       return;
     }
 
-    writeDirection(element, resolveDirection(text), role, text);
+    writeDirection(element, inherited || resolveDirection(text), role, key, align);
   }
 
   function applyDirection(element) {
@@ -189,6 +303,11 @@
 
     if (element.matches(LIST_SELECTOR)) {
       applyTextBlock(element, "list");
+      return;
+    }
+
+    if (element.matches(CELL_SELECTOR)) {
+      applyTextBlock(element, "block", tableDirectionOf(element));
       return;
     }
 
@@ -217,6 +336,8 @@
     if (!(root instanceof Element || root instanceof Document)) {
       return;
     }
+
+    pass += 1;
 
     if (root instanceof Element && root.matches(SCOPED_SELECTOR)) {
       applyDirection(root);
@@ -349,11 +470,81 @@
     }
 
     root.dataset.chatgptRtl = settings.enabled ? "on" : "off";
-    root.dataset.chatgptRtlMode = settings.mode === "rtl" ? "rtl" : "auto";
+    root.dataset.chatgptRtlSite = site.key;
+    root.dataset.chatgptRtlMode = settings.mode;
     root.dataset.chatgptRtlComposer =
       settings.enabled && settings.patchComposer ? "on" : "off";
     root.dataset.chatgptRtlSidebar =
       settings.enabled && settings.patchSidebar ? "on" : "off";
+    root.dataset.chatgptRtlFont = settings.enabled
+      ? settings.hebrewFont
+      : "default";
+  }
+
+  /**
+   * `content.css` carries the rules for the selectors every site shares. The
+   * handful a site adds on top of those are compiled here instead of being
+   * duplicated in the stylesheet, so `sites.js` stays the single place where
+   * a new site is described.
+   *
+   * An adopted stylesheet is used rather than a `<style>` node so that the
+   * extension still puts nothing in the page's DOM. If the browser lacks
+   * constructable stylesheets, the generic rules alone remain in force.
+   */
+  function installSiteStyles() {
+    if (!site.ownComposers.length && !site.ownSidebars.length) {
+      return;
+    }
+
+    // `adoptedStyleSheets` is an ObservableArray rather than a plain array, so
+    // the guard tests for its presence and the spread below does the rest.
+    if (typeof CSSStyleSheet !== "function" || !document.adoptedStyleSheets) {
+      return;
+    }
+
+    const rules = [];
+
+    if (site.ownComposers.length) {
+      const selector = site.ownComposers.join(", ");
+      rules.push(
+        `html[data-chatgpt-rtl-composer="on"] :is(${selector}),`,
+        `html[data-chatgpt-rtl-composer="on"] :is(${selector}) > :is(p, div, li, blockquote, h1, h2, h3, h4, h5, h6) {`,
+        "  unicode-bidi: plaintext;",
+        "  text-align: start !important;",
+        "}",
+        `html[data-chatgpt-rtl-composer="on"][data-chatgpt-rtl-mode="rtl"] :is(${selector}) {`,
+        "  direction: rtl !important;",
+        "}"
+      );
+    }
+
+    if (site.ownSidebars.length) {
+      const selector = site.ownSidebars.join(", ");
+      rules.push(
+        `html[data-chatgpt-rtl-sidebar="on"] :is(${selector}) :is(div, span, p, h3) {`,
+        "  unicode-bidi: plaintext;",
+        "  text-align: start;",
+        "}"
+      );
+    }
+
+    try {
+      const sheet = new CSSStyleSheet();
+      sheet.replaceSync(rules.join("\n"));
+      document.adoptedStyleSheets = [...document.adoptedStyleSheets, sheet];
+    } catch (error) {
+      console.warn("ChatGPT Web RTL could not install its site styles.", error);
+    }
+  }
+
+  function renderFloatingToggle() {
+    toggleApi?.render(settings, document, () => {
+      settingsApi
+        .write({ enabled: !settings.enabled })
+        .catch((error) => {
+          console.warn("ChatGPT Web RTL could not toggle its state.", error);
+        });
+    });
   }
 
   function startObserver() {
@@ -395,9 +586,18 @@
    */
   function resetAppliedDirections() {
     for (const element of document.querySelectorAll("[data-chatgpt-rtl-dir]")) {
-      element.removeAttribute("dir");
+      const original = originalDirection.get(element);
+
+      if (original == null) {
+        element.removeAttribute("dir");
+      } else {
+        element.setAttribute("dir", original);
+      }
+
+      originalDirection.delete(element);
       delete element.dataset.chatgptRtlDir;
       delete element.dataset.chatgptRtlRole;
+      delete element.dataset.chatgptRtlAlign;
     }
 
     for (const element of document.querySelectorAll(
@@ -410,6 +610,9 @@
   function applySettings() {
     generation += 1;
     syncRootAttributes();
+    // Rendered in both states: the button is how a user who switched the
+    // extension off from the page switches it back on.
+    renderFloatingToggle();
 
     if (!settings.enabled) {
       stopObserver();
@@ -447,6 +650,7 @@
   // The root attributes gate all CSS, so set them before the first paint and
   // refine once the stored settings resolve.
   syncRootAttributes();
+  installSiteStyles();
 
   loadSettings()
     .catch((error) => {

@@ -15,7 +15,15 @@
           <input id="enabled" type="checkbox">
           <span>
             <strong>הפעלת התוסף</strong>
-            <small>כיבוי מחזיר את ChatGPT להתנהגות המקורית מיד, בלי לרענן את הדף.</small>
+            <small>כיבוי מחזיר את האתר להתנהגות המקורית מיד, בלי לרענן את הדף.</small>
+          </span>
+        </label>
+
+        <label class="row">
+          <input id="floating-toggle" type="checkbox">
+          <span>
+            <strong>כפתור הפעלה בתוך הדף</strong>
+            <small>כפתור קטן ומוצמד לפינה, שמפעיל ומכבה את התוסף בלי לצאת מהשיחה. נשאר זמין גם כשהתוסף מכובה. זהו החלק היחיד בתוסף שמוסיף רכיב לדף, ולכן הוא מכובה כברירת מחדל.</small>
           </span>
         </label>
       </section>
@@ -23,13 +31,15 @@
       <fieldset id="details">
         <legend>אופן הזיהוי</legend>
 
-        <label class="row">
-          <input id="force-rtl" type="checkbox">
-          <span>
-            <strong>אילוץ עברית בכל ההודעות</strong>
-            <small>מתאים למי שכותב כמעט תמיד בעברית. בלוקים של קוד נשארים משמאל לימין.</small>
-          </span>
-        </label>
+        <div class="field">
+          <label for="mode"><strong>כיוון הטקסט בהודעות</strong></label>
+          <small>„לפי הודעה” מציג תשובה שרובה בעברית כולה מימין לשמאל, כמו מסמך Markdown בעברית — גם פסקה שמתחילה במילה באנגלית. „לפי פסקה” קובע כיוון נפרד לכל פסקה. בכל המצבים בלוקים של קוד נשארים משמאל לימין.</small>
+          <select id="mode">
+            <option value="message">לפי הודעה (ברירת מחדל)</option>
+            <option value="auto">לפי פסקה</option>
+            <option value="rtl">תמיד מימין לשמאל</option>
+          </select>
+        </div>
 
         <label class="row">
           <input id="patch-composer" type="checkbox">
@@ -56,7 +66,28 @@
         </label>
       </fieldset>
 
+      <fieldset id="typography">
+        <legend>גופן</legend>
+
+        <div class="field">
+          <label for="hebrew-font"><strong>גופן לטקסט בעברית</strong></label>
+          <small>חל רק על פסקאות שזוהו כעבריות. קוד, נוסחאות וטקסט באנגלית שומרים על הגופן של האתר. הגופנים נלקחים מהמערכת — שום דבר לא מורד מהרשת.</small>
+          <select id="hebrew-font">
+            <option value="default">כמו באתר (ברירת מחדל)</option>
+            <option value="system">ללא תגים, עם ריווח שורות נוח</option>
+            <option value="serif">עם תגים</option>
+          </select>
+        </div>
+      </fieldset>
+
       <p id="status" role="status" aria-live="polite"></p>
+
+      <section class="footnote">
+        <p><strong>אתרים נתמכים:</strong> ChatGPT, Claude, Gemini, Google AI Studio,
+          DeepSeek, Qwen, Grok, Le&nbsp;Chat, Perplexity, Microsoft&nbsp;Copilot,
+          Poe ו‑Duck.ai. באתרים שאינם ChatGPT הזיהוי נשען על מבנה ה‑HTML הכללי,
+          ולכן ייתכן שיהיה פחות מדויק.</p>
+      </section>
 
       <section class="footnote">
         <p>קיצור המקלדת <kbd>Alt+Shift+R</kbd> מפעיל ומכבה את התוסף. אפשר לשנות אותו דרך

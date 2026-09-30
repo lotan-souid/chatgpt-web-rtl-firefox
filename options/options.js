@@ -5,13 +5,16 @@
 
   const controls = {
     enabled: document.querySelector("#enabled"),
-    forceRtl: document.querySelector("#force-rtl"),
+    mode: document.querySelector("#mode"),
     patchComposer: document.querySelector("#patch-composer"),
     patchSidebar: document.querySelector("#patch-sidebar"),
-    smartCodeBlocks: document.querySelector("#smart-code-blocks")
+    smartCodeBlocks: document.querySelector("#smart-code-blocks"),
+    floatingToggle: document.querySelector("#floating-toggle"),
+    hebrewFont: document.querySelector("#hebrew-font")
   };
 
   const details = document.querySelector("#details");
+  const typography = document.querySelector("#typography");
   const status = document.querySelector("#status");
   let statusTimer;
 
@@ -25,23 +28,38 @@
 
   function render(settings) {
     controls.enabled.checked = settings.enabled;
-    controls.forceRtl.checked = settings.mode === "rtl";
+    controls.mode.value = settings.mode;
     controls.patchComposer.checked = settings.patchComposer;
     controls.patchSidebar.checked = settings.patchSidebar;
     controls.smartCodeBlocks.checked = settings.smartCodeBlocks;
-    details.disabled = !settings.enabled;
+    controls.floatingToggle.checked = settings.floatingToggle;
+    controls.hebrewFont.value = settings.hebrewFont;
+    setDisabled(!settings.enabled);
+  }
+
+  /**
+   * Greys out the settings that only mean anything while the extension is on.
+   * The on-page button is deliberately not among them: it sits outside these
+   * fieldsets because it stays available when the extension is off, which is
+   * what makes it possible to switch it back on from the page.
+   */
+  function setDisabled(disabled) {
+    details.disabled = disabled;
+    typography.disabled = disabled;
   }
 
   async function save() {
     await settingsApi.write({
       enabled: controls.enabled.checked,
-      mode: controls.forceRtl.checked ? "rtl" : "auto",
+      mode: controls.mode.value,
       patchComposer: controls.patchComposer.checked,
       patchSidebar: controls.patchSidebar.checked,
-      smartCodeBlocks: controls.smartCodeBlocks.checked
+      smartCodeBlocks: controls.smartCodeBlocks.checked,
+      floatingToggle: controls.floatingToggle.checked,
+      hebrewFont: controls.hebrewFont.value
     });
 
-    details.disabled = !controls.enabled.checked;
+    setDisabled(!controls.enabled.checked);
     announce("ההגדרה נשמרה.");
   }
 
