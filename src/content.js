@@ -258,6 +258,35 @@
   }
 
   /**
+   * Sites wrap a table in scroll and frame boxes (ChatGPT's TableScroller,
+   * Claude's overflow-x-auto). Left LTR, they pin a Hebrew table to the left
+   * edge and open a wide one scrolled to its last column. Every wrapper that
+   * holds nothing but the table takes the table's side; the walk stops at
+   * the first ancestor with text of its own, or at the message itself.
+   */
+  function applyTableWrappers(table) {
+    const direction = table.dataset.chatgptRtlDir;
+    if (direction !== "rtl" && direction !== "ltr") {
+      return;
+    }
+
+    const text = textOf(table).trim();
+    const message = table.closest(MESSAGE_ROOT_SELECTOR);
+
+    for (
+      let wrapper = table.parentElement;
+      wrapper && wrapper !== message && message?.contains(wrapper);
+      wrapper = wrapper.parentElement
+    ) {
+      if (wrapper.matches(SCAN_SELECTOR) || textOf(wrapper).trim() !== text) {
+        return;
+      }
+
+      writeDirection(wrapper, direction, "table-wrap", text);
+    }
+  }
+
+  /**
    * `align` overrides only the alignment, never the bidi direction. A cell
    * reading "Domains" in a Hebrew table keeps its English word order but
    * lines up on the right with the rest of its column, instead of breaking
@@ -313,6 +342,9 @@
 
     if (element.matches(BLOCK_SELECTOR)) {
       applyTextBlock(element, "block");
+      if (element.matches("table")) {
+        applyTableWrappers(element);
+      }
       return;
     }
 

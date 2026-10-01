@@ -53,6 +53,12 @@
       label: "ChatGPT",
       hosts: ["chatgpt.com", "chat.openai.com"],
       roots: [
+        // Current markup: the rendered Markdown of each message carries its
+        // role in `data-markdown-text-style`, and a CSS-module class whose
+        // hash suffix changes with every deployment.
+        "[data-markdown-text-style]",
+        "[class*=\"MarkdownRoot-\"]",
+        // Earlier markup, kept for pages still served the older build.
         "[data-message-author-role]",
         "article[data-testid^=\"conversation-turn-\"]"
       ],

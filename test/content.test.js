@@ -181,6 +181,74 @@ test("message mode flips every block when a streamed answer turns Hebrew", async
   page.close();
 });
 
+test("finds messages in ChatGPT's current markup", async () => {
+  const page = await createPage(`
+    <div data-chatgpt-selection-message-id="83127a6f">
+      <div class="MarkdownRoot-rZKhxa" dir="auto" data-markdown-text-style="assistant-message">
+        <h2 dir="auto">10. טבלה בעברית</h2>
+        <div class="TableContainer-UfIOz_" data-markdown-table="true" id="container">
+          <div class="TableScroller-ZhMTLB" id="scroller"><div class="TableWrapper-i1mUIE" id="wrapper">
+            <table class="Table-LqdUhs" dir="auto" id="table">
+              <thead><tr><th dir="auto">מוצר</th><th dir="auto" id="head">גרסה</th><th dir="auto">משתמשים</th><th dir="auto">מצב</th></tr></thead>
+              <tbody>
+                <tr><td dir="auto">Visual Studio Code</td><td dir="auto" id="version">v1.8</td><td dir="auto">25</td><td dir="auto">פעיל</td></tr>
+                <tr><td dir="auto">שרת API</td><td dir="auto">v3.0</td><td dir="auto">5</td><td dir="auto">בדיקה</td></tr>
+              </tbody>
+            </table>
+          </div></div>
+        </div>
+      </div>
+    </div>
+  `);
+  const { document } = page;
+
+  assert.equal(document.querySelector("#table").dataset.chatgptRtlDir, "rtl");
+  assert.equal(document.querySelector("#head").dataset.chatgptRtlAlign, "rtl");
+  assert.equal(document.querySelector("#version").dataset.chatgptRtlAlign, "rtl");
+
+  // The scroll boxes around the table take its side, so the table sits on
+  // the right and a wide one opens scrolled to its first column.
+  for (const id of ["container", "scroller", "wrapper"]) {
+    const wrapper = document.querySelector(`#${id}`);
+    assert.equal(wrapper.dataset.chatgptRtlDir, "rtl", id);
+    assert.equal(wrapper.dataset.chatgptRtlRole, "table-wrap", id);
+    assert.equal(wrapper.getAttribute("dir"), "rtl", id);
+  }
+  // The message itself is never treated as a table wrapper.
+  assert.notEqual(
+    document.querySelector("[data-markdown-text-style]").dataset.chatgptRtlRole,
+    "table-wrap"
+  );
+
+  page.close();
+});
+
+test("leaves a table wrapper with text of its own alone", async () => {
+  const page = await createPage(`
+    <div data-message-author-role="assistant">
+      <div class="markdown">
+        <div id="frame"><span>Table 1</span>
+          <div class="overflow-x-auto" id="scroller" dir="auto">
+            <table><tbody><tr><td>שירות</td><td>Domains</td></tr></tbody></table>
+          </div>
+        </div>
+      </div>
+    </div>
+  `);
+  const { document } = page;
+  const scroller = document.querySelector("#scroller");
+
+  assert.equal(scroller.dataset.chatgptRtlRole, "table-wrap");
+  assert.equal(document.querySelector("#frame").dataset.chatgptRtlDir, undefined);
+
+  // Switching off puts back the site's own `dir`.
+  await page.setSettings({ enabled: false });
+  assert.equal(scroller.getAttribute("dir"), "auto");
+  assert.equal(scroller.dataset.chatgptRtlRole, undefined);
+
+  page.close();
+});
+
 test("keeps source code left to right", async () => {
   const page = await createPage(HEBREW_TURN);
   const pre = page.document.querySelector("#code");

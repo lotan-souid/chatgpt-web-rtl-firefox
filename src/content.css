@@ -14,6 +14,7 @@
  *
  *   data-chatgpt-rtl-dir      rtl | ltr | auto
  *   data-chatgpt-rtl-role     block | list | container | pre-code | pre-prose
+ *                             | table-wrap (a scroll box around a table)
  *   data-chatgpt-rtl-align    rtl | ltr     table cells: the table's side
  *
  * Direction is driven by these data attributes rather than by `dir`, so the

@@ -1,6 +1,6 @@
 {
   "name": "chatgpt-web-rtl-firefox",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "private": true,
   "description": "A Firefox extension that adds automatic RTL support to ChatGPT and other AI chat sites.",
   "scripts": {
