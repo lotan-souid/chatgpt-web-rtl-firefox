@@ -46,6 +46,28 @@ html[data-chatgpt-rtl="on"] [data-chatgpt-rtl-dir="auto"] {
 }
 
 /*
+ * ChatGPT's current markup wraps some runs of a paragraph in `<bdi>`:
+ *
+ *   <span>Yantr רץ על Linux, </span><bdi>בדרך כלל בתוך </bdi>
+ *   <strong><span>VM ייעודית ב־Proxmox</span></strong>
+ *
+ * An isolate counts as a neutral character to the paragraph around it, so it
+ * takes the direction of its neighbours. Between "Linux," and "VM" that is
+ * left-to-right: the three are laid out as one LTR run, "VM" jumps in front
+ * of the Hebrew, and the bold phrase is torn in two. Inside a right-to-left
+ * block, ordinary inline elements must join the paragraph's flow instead,
+ * exactly as in a plain Markdown render. Technical runs are excluded and
+ * isolated by the rule below.
+ */
+html[data-chatgpt-rtl="on"] [data-chatgpt-rtl-dir="rtl"]:not([data-chatgpt-rtl-role^="pre-"])
+  :is(span, strong, b, em, i, u, s, del, ins, mark, a, small, sub, sup, abbr, cite, q, bdi):not(
+    code *, kbd *, samp *, pre *, [class*="katex"], [class*="katex"] *, math *, svg *
+  ) {
+  direction: inherit !important;
+  unicode-bidi: normal !important;
+}
+
+/*
  * Inline technical runs inside Hebrew prose. Isolating them is what keeps
  * trailing punctuation, slashes and brackets on the correct side without
  * rewriting any of ChatGPT's DOM.
